@@ -35,7 +35,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get install libpq-dev 
-        pip3 install coveralls
+        pip3 install coveralls==1.9.2
         pip3 install pipenv
         pipenv install --dev
     - name: Linting
