@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'sortedm2m',
     'ckeditor',
     'ckeditor_uploader',
+    'corsheaders',
     'hitcount',
     'django_cleanup',
     'oauth.apps.OauthConfig',
@@ -63,6 +64,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -70,9 +73,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
     'htmlmin.middleware.HtmlMinifyMiddleware',
     'htmlmin.middleware.MarkRequestMiddleware',
-    'oauth.middleware.UserProfileExistsMiddleware',
     'social_django.middleware.SocialAuthExceptionMiddleware'
 ]
 
@@ -87,6 +90,12 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "static"),
 ]
 
+STATICFILES_FINDERS = [
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'gymkhana.utils.VueFilesFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+]
+
 STATIC_ROOT = os.path.join(BASE_DIR, config('STATIC_PATH', default='../staticfiles', cast=str))
 
 STATIC_URL = '/static/'
@@ -94,6 +103,12 @@ STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR, config('MEDIA_PATH', default='../media', cast=str))
 
 MEDIA_URL = '/media/'
+
+VUE_ROOT = os.path.join(BASE_DIR, config('VUE_PATH', default='../vue', cast=str))
+
+VUE_DIRS = [
+    os.path.join(VUE_ROOT, 'dist')
+]
 
 CUSTOM_TEMPLATE_DIR_NAME = 'html_templates'
 
@@ -157,16 +172,19 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-LOGIN_REDIRECT_URL = 'forum:index'
+LOGIN_REDIRECT_URL = 'session'
 
-LOGIN_URL = 'login'
+LOGIN_URL = '/login'
 
-LOGIN_ERROR_URL = '/login/'
+LOGIN_ERROR_URL = '/login'
 
-SOCIAL_AUTH_LOGIN_ERROR_URL = '/login/'
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/login'
+SOCIAL_AUTH_FIELDS_STORED_IN_SESSION = ['to']
 
 AUTHENTICATION_BACKENDS = [
     'social_core.backends.google.GoogleOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+    'graphql_jwt.backends.JSONWebTokenBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]
 
@@ -302,8 +320,30 @@ VERSATILEIMAGEFIELD_SETTINGS = {
     'progressive_jpeg': False
 }
 
+VERSATILEIMAGEFIELD_RENDITION_KEY_SETS = {
+    'festival': [
+        ('full_size', 'url'),
+        ('thumbnail', 'thumbnail__100x100'),
+        ('medium_square_crop', 'crop__400x400'),
+        ('small_square_crop', 'crop__50x50')
+    ],
+    'image': [
+        ('full_size', 'url')
+    ]
+}
+
+HOME_PAGE_CAROUSEL_GALLERY_SLUG = config('HOME_PAGE_CAROUSEL_GALLERY_SLUG', cast=str, default='home-carousel')
+HOME_PAGE_GALLERY_SLUG = config('HOME_PAGE_GALLERY_SLUG', cast=str, default='home-gallery')
+
+CORS_ORIGIN_ALLOW_ALL = DEBUG
+
 GRAPHENE = {
-    'SCHEMA': 'gymkhana.schema.schema'
+    'SCHEMA': 'gymkhana.schema.schema',
+    'SCHEMA_INDENT': 2,
+    'RELAY_CONNECTION_MAX_LIMIT': 100,
+    'MIDDLEWARE': [
+        'graphql_jwt.middleware.JSONWebTokenMiddleware',
+    ],
 }
 
 if not DEBUG:
@@ -330,3 +370,7 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 465
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='noreply@localhost.com', cast=str)
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='', cast=str)
+
+GRAPHQL_JWT = {
+    'JWT_AUTH_HEADER_PREFIX': 'Bearer'
+}
